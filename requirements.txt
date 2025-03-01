@@ -12,3 +12,4 @@ datasets
 peft
 bitsandbytes
 tf-keras
+evaluate
