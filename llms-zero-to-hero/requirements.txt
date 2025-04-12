@@ -1,0 +1,13 @@
+python-dotenv
+openai
+langchain_community 
+langchain-openai 
+langchain 
+langgraph 
+bs4
+pandas
+pandasql
+# langchain-anthropic 
+# python -m venv venv
+# pip install -r requirements.txt --trusted-host pypi.org --trusted-host files.pythonhosted.org
+# pip install -U duckduckgo-search --trusted-host pypi.org --trusted-host files.pythonhosted.org
