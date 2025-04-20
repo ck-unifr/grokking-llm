@@ -1,0 +1,13 @@
+torch
+torchvision
+torchaudio
+torchtext
+datasets
+tokenizers
+torchmetrics
+tensorboard
+altair
+wandb
+# python -m venv venv
+# source venv/bin/activate
+# pip install -r requirements.txt --trusted-host pypi.org --trusted-host files.pythonhosted.org
