@@ -57,3 +57,33 @@ class PositionalEncoding(nn.Module):
 
     def _slow_forward(self, *input, **kwargs):
         return super()._slow_forward(*input, **kwargs)
+
+
+class LayerNormalization(nn.Module):
+
+    def __init__(self, eps:float=10**-6) -> None:
+        super().__init__()
+        self.eps = eps
+        self.alpha = nn.Parameter(torch.ones(1)) # Multiplied
+        self.bias = nn.Parameter(torch.zeros(1)) # Added
+    
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        mean = x.mean(-1, keepdim=True)
+        std = x.std(-1, keepdim=True)
+        return self.alpha * (x - mean) / (std + self.eps) + self.bias
+
+
+class FeedforwardBlock(nn.Module):
+
+    def __init__(self, d_model: int, d_ff: int, dropout: float) -> None:
+        super().__init__()
+        self.linear_1 = nn.Linear(d_model, d_ff) # W1 and B1
+        self.dropout = nn.Dropout(dropout) 
+        self.linear_2 = nn.Linear(d_ff, d_model) # W2 and B2
+    
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # (Batch, Seq_len, d_model) -> (Batch, Seq_len, d_ff) -> (Batch, Seq_len, d_model)
+        return self.linear_2(self.dropout(torch.relu(self.linear_1(x))))
+    
+
+    
