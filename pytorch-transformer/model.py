@@ -105,7 +105,10 @@ class MultiHeadAttentionBlock(nn.Module):
         key = self.w_k(k) # (Batch, Seq_len, d_model) -> (Batch, Seq_len, d_model)
         value = self.w_v(v) # (Batch, Seq_len, d_model) -> (Batch, Seq_len, d_model)
         # Split the embedding into h heads
-        query = query.view(query.size(0), query.size(1), self.h, self.d_k).transpose(1, 2) # (Batch, h, Seq_len, d_k)
+        # (Bach, Seq_len, d_model) -> (Batch, Seq_len, h, d_k) -> (Batch, h, Seq_len, d_k)
+        query = query.view(query.shape[0], query.shape[1], self.h, self.d_k).transpose(1, 2) # (Batch, h, Seq_len, d_k)
+        key = key.view(key.shape[0], key.shape[1], self.h, self.d_k).transpose(1, 2) # (Batch, h, Seq_len, d_k)
+        value = value.view(value.shape[0], value.shape[1], self.h, self.d_k).transpose(1, 2) # (Batch, h, Seq_len, d_k)
 
 
     
