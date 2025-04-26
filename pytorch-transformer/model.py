@@ -86,4 +86,26 @@ class FeedforwardBlock(nn.Module):
         return self.linear_2(self.dropout(torch.relu(self.linear_1(x))))
     
 
+class MultiHeadAttentionBlock(nn.Module):
+
+    def __init__(self, d_model: int, h: int, dropout: float) -> None:
+        super().__init__()
+        self.d_model = d_model
+        self.h = h
+        assert self.d_model % self.h == 0, "d_model must be divisible by h"
+        self.d_k = d_model // h
+        self.w_q = nn.Linear(d_model, d_model) # Wq
+        self.w_k = nn.Linear(d_model, d_model) # Wk
+        self.w_v = nn.Linear(d_model, d_model) # Wv
+        self.w_o = nn.Linear(d_model, d_model) # Wo
+        self.dropout = nn.Dropout(dropout)
+    
+    def forward(self, q, k, v, mask) -> torch.Tensor:
+        query = self.w_q(q) # (Batch, Seq_len, d_model) -> (Batch, Seq_len, d_model)
+        key = self.w_k(k) # (Batch, Seq_len, d_model) -> (Batch, Seq_len, d_model)
+        value = self.w_v(v) # (Batch, Seq_len, d_model) -> (Batch, Seq_len, d_model)
+        # Split the embedding into h heads
+        query = query.view(query.size(0), query.size(1), self.h, self.d_k).transpose(1, 2) # (Batch, h, Seq_len, d_k)
+
+
     
