@@ -148,6 +148,68 @@ class MultiHeadAttentionBlock(nn.Module):
         x = x.transpose(1, 2).contiguous().view(x.shape[0], x.shape[1], self.d_model)
 
         # (Batch, Seq_len, d_model) -> (Batch, Seq_len, d_model)
-        return self.w_o(x)  
-        
-        
+        return self.w_o(x)
+
+
+class ResidualConnection(nn.Module):
+
+    def __init__(self, dropout: float) -> None:
+        super().__init__()
+        self.dropout = nn.Dropout(dropout)
+        self.norm = LayerNormalization()
+
+    def forward(self, x: torch.Tensor, sublayer: torch.Tensor) -> torch.Tensor:
+        # Apply the residual connection and layer normalization
+        # return self.layer_norm(x + self.dropout(sublayer(x)))
+        return x + self.dropout(sublayer(self.norm(x)))
+
+
+class EncoderLayer(nn.Module):
+
+    def __init__(
+        self,
+        self_attention_block: MultiHeadAttentionBlock,
+        feed_forward_block: FeedforwardBlock,
+        dropout: float,
+    ) -> None:
+        super().__init__()
+        self.self_attention_block = self_attention_block
+        self.feed_forward_block = feed_forward_block
+        self.residual_connection = nn.ModuleList(
+            [ResidualConnection(dropout) for _ in range(2)]
+        )
+
+    def forward(self, src_mask):
+        x = self.residual_connection[0](
+            src_mask, lambda x: self.self_attention_block(x, x, x, src_mask)
+        )
+        x = self.residual_connection[1](x, self.feed_forward_block)
+        return x
+
+
+class Encoder(nn.Module):
+
+    def __init__(self, layers: nn.ModuleList) -> None:
+        super().__init__()
+        self.layers = layers
+        self.norm = LayerNormalization()
+    
+    def forward(self):
+        for layer in self.layers:
+            x = layer(x)
+        return self.norm(x)
+
+
+class ProjectLayer(nn.Module):
+
+    def __init__(self, d_model: int, vocab_size: int) -> None:
+        super().__init__()
+        self.proj = nn.Linear(d_model, vocab_size)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # (Batch, Seq_len, d_model) -> (Batch, Seq_len, vocab_size)
+        x = self.proj(x)
+        return torch.log_softmax(x, dim=-1)  # (Batch, Seq_len, vocab_size)
+
+
+# class Transformer(nn.Module):
