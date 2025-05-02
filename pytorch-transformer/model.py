@@ -256,4 +256,33 @@ class ProjectLayer(nn.Module):
         return torch.log_softmax(x, dim=-1)  # (Batch, Seq_len, vocab_size)
 
 
-# class Transformer(nn.Module):
+class Transformer(nn.Module):
+
+    def __init__(
+        self,
+        encoder: Encoder,
+        decoder: Decoder,
+        src_embed: InputEmbeddings,
+        tgt_embed: InputEmbeddings,
+        src_pos: PositionalEncoding,
+        tgt_pos: PositionalEncoding,
+        project_layer: ProjectLayer,
+    ) -> None:
+        super().__init__()
+        self.encoder = encoder
+        self.decoder = decoder
+        self.src_embed = src_embed
+        self.tgt_embed = tgt_embed
+        self.src_pos = src_pos
+        self.tgt_pos = tgt_pos
+        self.project_layer = project_layer
+    
+    def encode(self, src, src_mask):
+        x = self.src_embed(src)
+        x = self.encoder(x, src_mask)
+        return self.encoder(src, src_mask)
+    
+    def decode(self, encoder_output, src_mask, tgt, tgt_mask):
+        x = self.tgt_embed(tgt)
+        x = self.tgt_pos(x)
+        return self.decoder(x, encoder_output, src_mask, tgt_mask)
