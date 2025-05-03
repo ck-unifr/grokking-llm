@@ -352,4 +352,13 @@ def build_transformer(
         projection_layer,
     )
 
+    # initialize the weights
+    for p in transformer.parameters():
+        if p.dim() > 1:
+            nn.init.xavier_uniform_(p)
+        else:
+            nn.init.constant_(p, 0)
+    
+    return transformer
+
 
