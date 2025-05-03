@@ -338,4 +338,18 @@ def build_transformer(
     encoder = Encoder(nn.ModuleList(encoder_blocks))
     decoder = Decoder(nn.ModuleList(decoder_blocks))
 
-    
+    # create a projection layer
+    projection_layer = ProjectLayer(d_model, tgt_vocab_size)
+
+    # create the transformer model
+    transformer = Transformer(
+        encoder,
+        decoder,
+        src_embed,
+        tgt_embed,
+        src_pos,
+        tgt_pos,
+        projection_layer,
+    )
+
+
