@@ -276,18 +276,61 @@ class Transformer(nn.Module):
         self.src_pos = src_pos
         self.tgt_pos = tgt_pos
         self.project_layer = project_layer
-    
+
     def encode(self, src, src_mask):
         x = self.src_embed(src)
         x = self.encoder(x, src_mask)
         return self.encoder(src, src_mask)
-    
+
     def decode(self, encoder_output, src_mask, tgt, tgt_mask):
         x = self.tgt_embed(tgt)
         x = self.tgt_pos(x)
         return self.decoder(x, encoder_output, src_mask, tgt_mask)
-    
+
     def project(self, x):
         return self.project_layer(x)
 
+
+def build_transformer(
+    src_vocab_size: int,
+    tgt_vocab_size: int,
+    src_sqe_len: int,
+    tgt_seq_len: int,
+    d_model: int = 512,
+    N: int = 6,
+    h: int = 8,
+    dropout: float = 0.1,
+    d_ff: int = 2048,
+) -> Transformer:
+    # create an embedding layer
+    src_embed = InputEmbeddings(d_model, src_vocab_size)
+    tgt_embed = InputEmbeddings(d_model, tgt_vocab_size)
+
+    # create a positional encoding layer
+    src_pos = PositionalEncoding(d_model, src_sqe_len, 0.1)
+    tgt_pos = PositionalEncoding(d_model, tgt_seq_len, 0.1)
+
+    # create encoder blocks
+    encoder_blocks = []
+    for _ in range(N):
+        encoder_self_attention_block = MultiHeadAttentionBlock(d_model, h, dropout)
+        encoder_feed_forward_block = FeedforwardBlock(d_model, d_ff, dropout)
+        encoder_block = EncoderBlock(
+            encoder_self_attention_block, encoder_feed_forward_block, dropout
+        )
+        encoder_blocks.append(encoder_block)
+    
+    # create decoder blocks
+    decoder_blocks = []
+    for _ in range(N):
+        decoder_self_attention_block = MultiHeadAttentionBlock(d_model, h, dropout)
+        decoder_cross_attention_block = MultiHeadAttentionBlock(d_model, h, dropout)
+        decoder_feed_forward_block = FeedforwardBlock(d_model, d_ff, dropout)
+        decoder_block = DecoderBlock(
+            decoder_self_attention_block,
+            decoder_cross_attention_block,
+            decoder_feed_forward_block,
+            dropout,
+        )
+        decoder_blocks.append(decoder_block)
 
