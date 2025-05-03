@@ -333,4 +333,9 @@ def build_transformer(
             dropout,
         )
         decoder_blocks.append(decoder_block)
+    
+    # create encoder and decoder
+    encoder = Encoder(nn.ModuleList(encoder_blocks))
+    decoder = Decoder(nn.ModuleList(decoder_blocks))
 
+    
