@@ -356,8 +356,8 @@ def build_transformer(
     for p in transformer.parameters():
         if p.dim() > 1:
             nn.init.xavier_uniform_(p)
-        else:
-            nn.init.constant_(p, 0)
+        # else:
+        #     nn.init.constant_(p, 0)
     
     return transformer
 
