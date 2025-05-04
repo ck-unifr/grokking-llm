@@ -47,15 +47,45 @@ class BilingualDataset(Dataset):
         if enc_num_padding_tokens < 0 or dec_num_padding_tokens < 0:
             raise ValueError("The input sequence is too long for the model.")
 
-        # add sos and eos tokens
+        # add sos and eos to the source text
         encoder_input = torch.cat(
             [
                 self.sos_token,
                 torch.Tensor(enc_input_tokens, dtype=torch.int64),
                 self.eos_token,
-                torch.Tensor(
+                torch.tensor(
                     [self.pad_token] * enc_num_padding_tokens, dtype=torch.int64
                 ),
             ]
         )
+
+        # add sos to the decoder input
+        decoder_input = torch.cat(
+            [
+                self.sos_token,
+                torch.tensor(dec_input_tokens, dtype=torch.int64),
+                torch.tensor([self.pad_token] * dec_num_padding_tokens, dtype=torch.int64),
+            ]
+        )
+
+        # add eos to the label (what we expect as output from the decoder)
+        label = torch.cat(
+            [
+                torch.tensor(dec_input_tokens, dtype=torch.int64),
+                self.eos_token,
+                torch.tensor([self.pad_token] * dec_num_padding_tokens, dtype=torch.int64),
+            ]
+        )
+
+        assert encoder_input.size(0) == self.seq_len
+        assert decoder_input.size(0) == self.seq_len
+        assert label.size(0) == self.seq_len
+
+        return {
+            "encoder_input": encoder_input, # seq_le
+            "decoder_input": decoder_input, # seq_len
+            "encoder_mask": (encoder_input != self.pad_token).unsqueeze(0).unsqueeze(0).int(), # (1, 1, seq_len)
+            "decoder_mask": (decoder_input != self.pad_token).unsqueeze(0).unsqueeze(0).int(), # (1, 1, seq_len)
+            "label": label,
+        }
         
