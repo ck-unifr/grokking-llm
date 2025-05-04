@@ -29,8 +29,7 @@ class BilingualDataset(Dataset):
         src_target_pair = self.ds[index]
         src_text = src_target_pair['translation'][self.src_lang]
         tgt_text = src_target_pair['translation'][self.tgt_lang]
-        src_tokens = self.tokenizer_src.encode(src_text).ids
-        tgt_tokens = self.tokenizer_tgt.encode(tgt_text).ids
-        src_tokens = src_tokens[:self.seq_len]
+        enc_input_tokens= self.tokenizer_src.encode(src_text).ids
+        dec_input_tokens = self.tokenizer_tgt.encode(tgt_text).ids
 
 
