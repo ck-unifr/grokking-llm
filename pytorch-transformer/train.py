@@ -12,6 +12,8 @@ from tokenizers.pre_tokenizers import Whitespace
 
 from torch.utils.tensorboard import SummaryWriter
 
+from tqdm import tqdm
+
 from pathlib import Path
 
 from dataset import BilingualDataset
@@ -140,3 +142,17 @@ def train_model(config):
         ignore_index=tokenizer_tgt.token_to_id("[PAD]"),
         label_smoothing=0.1,
     ).to(device)
+
+    for epoch in range(init_epoch, config['num_epochs']):
+        model.train()
+        batch_iterator = tqdm(train_dataloader, desc=f"Processing epoch {epoch:02d}")
+        for batch in batch_iterator:
+            encoder_input = batch["encoder_input"].to(device) # (batch_size, seq_len)
+            decoder_input = batch["decoder_input"].to(device) # (batch_size, seq_len)
+            encoder_mask = batch['encoder_mask'].to(device) # (batch_size, seq_len)
+            decoder_mask = batch['decoder_mask'].to(device) # (batch_size, seq_len)
+            
+            # run the tensors through transformer
+            encoder_output = model.encode(encoder_input, encoder_mask) # (batch_size, seq_len, d_model)    
+            decoder_output = model.decode(decoder_input, encoder_output, decoder_mask) # (batch_size, seq_len, d_model)
+            
