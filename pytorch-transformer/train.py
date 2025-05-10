@@ -160,7 +160,20 @@ def train_model(config):
             label = batch["label"].to(device) # (batch_size, seq_len)
 
             # (batch_size, seq_len, tgt_vocab_size) -> (batch_size * seq_len, tgt_vocab_size)
-            loss = loss_fn(proj_output.view(-1, tokenizer_tgt.get)) # (batch_size * seq_len, vocab_size)
+            loss = loss_fn(proj_output.view(-1, tokenizer_tgt.get), label.view(-1)) # (batch_size * seq_len, vocab_size)
+            batch_iterator.set_postfix({f"loss": f"{loss.item():6.3f}"})
+
+            # log the loss
+            writer.add_scalar("loss", loss.item(), global_step)
+            writer.flush()
+
+            # backpropagation
+            optimizer.step()
+            optimizer.zero_grad()
+            
+            global_step += 1
+            
+
             # (batch_size, seq_len)
             # (batch_size * seq_len, vocab_size)
 
