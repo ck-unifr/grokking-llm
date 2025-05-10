@@ -154,5 +154,13 @@ def train_model(config):
             
             # run the tensors through transformer
             encoder_output = model.encode(encoder_input, encoder_mask) # (batch_size, seq_len, d_model)    
-            decoder_output = model.decode(decoder_input, encoder_output, decoder_mask) # (batch_size, seq_len, d_model)
-            
+            decoder_output = model.decode(encoder_output, encoder_mask, decoder_input, decoder_mask) # (batch_size, seq_len, d_model)
+            proj_output = model.projection(decoder_output) # (batch_size, seq_len, tgt_vocab_size)
+
+            label = batch["label"].to(device) # (batch_size, seq_len)
+
+            # (batch_size, seq_len, tgt_vocab_size) -> (batch_size * seq_len, tgt_vocab_size)
+            loss = loss_fn(proj_output.view(-1, tokenizer_tgt.get)) # (batch_size * seq_len, vocab_size)
+            # (batch_size, seq_len)
+            # (batch_size * seq_len, vocab_size)
+
