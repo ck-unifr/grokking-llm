@@ -170,8 +170,20 @@ def train_model(config):
             # backpropagation
             optimizer.step()
             optimizer.zero_grad()
-            
+
             global_step += 1
+        
+        # save the model at the end of the epoch
+        model_filename = get_weights_file_path(config, f'{epoch:02d}')
+        torch.save(
+            {
+                "epoch": epoch,
+                "model_state_dict": model.state_dict(),
+                "optimizer_state_dict": optimizer.state_dict(),
+                "global_step": global_step,
+            },
+            model_filename,
+        )
             
 
             # (batch_size, seq_len)
