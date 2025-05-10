@@ -13,6 +13,7 @@ from tokenizers.pre_tokenizers import Whitespace
 from torch.utils.tensorboard import SummaryWriter
 
 from tqdm import tqdm
+import warnings
 
 from pathlib import Path
 
@@ -185,6 +186,11 @@ def train_model(config):
             model_filename,
         )
             
+
+if __name__ == '__main__':
+    warnings.filterwarnings("ignore")
+    config = get_config()
+    train_model(config)
 
             # (batch_size, seq_len)
             # (batch_size * seq_len, vocab_size)
