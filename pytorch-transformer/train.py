@@ -17,8 +17,51 @@ import warnings
 
 from pathlib import Path
 
-from dataset import BilingualDataset
+from dataset import BilingualDataset, causal_mask
 from model import TransformerModel, build_transformer_model
+
+
+def greedy_decode(
+    model, source, source_mask, tokenizer_src, tokenizer_tgt, max_len, device
+):
+    sos_idx = tokenizer_tgt.token_to_id("[SOS]")
+    eos_idx = tokenizer_tgt.token_to_id("[EOS]")
+    # pad_idx = tokenizer_tgt.token_to_id("[PAD]")
+
+    # Precompute the encoder output and reuse it for every token we get from the decoder
+    encoder_output = model.encode(source, source_mask)
+    # Initialize the decoder input with the SOS token
+    decoder_input = torch.empty((1, 1)).fill_(sos_idx).type_as(source).to(device)
+    while True:
+        if decoder_input.size(1) == max_len:
+            break
+
+        # Build the decoder mask
+        decoder_mask = causal_mask(decoder_input.size(1)).type_as(source).to(device)
+
+        # Calculate the output of the decoder
+        decoder_output = model.decode(
+            encoder_output, source_mask, decoder_input, decoder_mask
+        )
+
+        # Get the next token
+        prob = model.projection(decoder_output[:, -1])
+
+        # Select the token with the highest probability
+        _, next_token = torch.max(prob, dim=-1)
+
+        decoder_input = torch.cat(
+            [
+                decoder_input,
+                torch.empty(1, 1).type_as(source).fill_(next_token.item()).to(device),
+            ],
+            dim=1,
+        )
+
+        if next_token.item() == eos_idx:
+            break
+
+    return decoder_input.squeeze(0)
 
 
 def run_validation(
@@ -39,7 +82,7 @@ def run_validation(
     source_texts = []
     target_texts = []
     predicted_texts = []
-    
+
     # size of control window (just use a default value)
     control_window = 80
 
@@ -52,12 +95,10 @@ def run_validation(
             assert encoder_input.size(0) == 1, "Batch size should be 1"
 
             decoder_input = batch["decoder_input"].to(device)
-            
+
             decoder_mask = batch["decoder_mask"].to(device)
             label = batch["label"].to(device)
             # run the tensors through transformer
-
-
 
 
 def get_all_sentences(ds, lang):
