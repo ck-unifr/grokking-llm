@@ -79,12 +79,12 @@ def run_validation(
     model.eval()
     count = 0
 
-    source_texts = []
-    expected = []
-    predicted = []
+    # source_texts = []
+    # expected = []
+    # predicted = []
 
     # size of control window (just use a default value)
-    control_window = 80
+    console_width = 80
 
     with torch.no_grad():
         for batch in validation_ds:
@@ -108,9 +108,22 @@ def run_validation(
             target_text = batch["tgt_text"][0]
             model_out_text = tokenizer_tgt.decode(model_out.detach().cpu().numpy())
 
-            source_texts.append(source_text)
-            expected.append(target_text)
-            predicted.append(model_out_text)
+            # source_texts.append(source_text)
+            # expected.append(target_text)
+            # predicted.append(model_out_text)
+
+            # Print to the console
+            print_msg("-" * console_width)
+            print_msg(f"SOURCE: {source_text}")
+            print_msg(f"TARGET: {target_text}")
+            print_msg(f"PREDICTED: {model_out_text}")
+
+            if count == num_examples:
+                break
+
+    # if writer:
+    #     #TorchMatrics CharErrorRate, BLEU, WordErrorRate
+
 
 
 def get_all_sentences(ds, lang):
@@ -268,9 +281,24 @@ def train_model(config):
             writer.add_scalar("loss", loss.item(), global_step)
             writer.flush()
 
-            # backpropagation
+            # backpropagate the loss 
+            loss.backward()
+
+            # Update the weights
             optimizer.step()
             optimizer.zero_grad()
+
+            run_validation(
+                model,
+                val_dataloader,
+                tokenizer_src,
+                tokenizer_tgt,
+                config["seq_len"],
+                device,
+                lambda msg: batch_iterator.write(msg),
+                global_step,
+                writer,
+            )
 
             global_step += 1
 
