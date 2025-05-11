@@ -104,6 +104,11 @@ def run_validation(
                 device,
             )
 
+            source_texts = batch['src_text'][0]
+            target_texts = batch['tgt_text'][0]
+            model_output = tokenizer_tgt.decode(model_output.detach().cpu().numpy())
+            
+
 
 def get_all_sentences(ds, lang):
     for item in ds:
