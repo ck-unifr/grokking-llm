@@ -80,8 +80,8 @@ def run_validation(
     count = 0
 
     source_texts = []
-    target_texts = []
-    predicted_texts = []
+    expected = []
+    predicted = []
 
     # size of control window (just use a default value)
     control_window = 80
@@ -94,7 +94,7 @@ def run_validation(
 
             assert encoder_input.size(0) == 1, "Batch size should be 1"
 
-            model_output = greedy_decode(
+            model_out = greedy_decode(
                 model,
                 encoder_input,
                 encoder_mask,
@@ -104,10 +104,13 @@ def run_validation(
                 device,
             )
 
-            source_texts = batch['src_text'][0]
-            target_texts = batch['tgt_text'][0]
-            model_output = tokenizer_tgt.decode(model_output.detach().cpu().numpy())
-            
+            source_text = batch["src_text"][0]
+            target_text = batch["tgt_text"][0]
+            model_out_text = tokenizer_tgt.decode(model_out.detach().cpu().numpy())
+
+            source_texts.append(source_text)
+            expected.append(target_text)
+            predicted.append(model_out_text)
 
 
 def get_all_sentences(ds, lang):
