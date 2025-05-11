@@ -94,11 +94,15 @@ def run_validation(
 
             assert encoder_input.size(0) == 1, "Batch size should be 1"
 
-            decoder_input = batch["decoder_input"].to(device)
-
-            decoder_mask = batch["decoder_mask"].to(device)
-            label = batch["label"].to(device)
-            # run the tensors through transformer
+            model_output = greedy_decode(
+                model,
+                encoder_input,
+                encoder_mask,
+                tokenizer_src,
+                tokenizer_tgt,
+                max_len,
+                device,
+            )
 
 
 def get_all_sentences(ds, lang):
