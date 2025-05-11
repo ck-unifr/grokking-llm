@@ -21,6 +21,45 @@ from dataset import BilingualDataset
 from model import TransformerModel, build_transformer_model
 
 
+def run_validation(
+    model,
+    validation_ds,
+    tokenizer_src,
+    tokenizer_tgt,
+    max_len,
+    device,
+    print_msg,
+    global_state,
+    writer,
+    num_examples=2,
+):
+    model.eval()
+    count = 0
+
+    source_texts = []
+    target_texts = []
+    predicted_texts = []
+    
+    # size of control window (just use a default value)
+    control_window = 80
+
+    with torch.no_grad():
+        for batch in validation_ds:
+            count += 1
+            encoder_input = batch["encoder_input"].to(device)
+            encoder_mask = batch["encoder_mask"].to(device)
+
+            assert encoder_input.size(0) == 1, "Batch size should be 1"
+
+            decoder_input = batch["decoder_input"].to(device)
+            
+            decoder_mask = batch["decoder_mask"].to(device)
+            label = batch["label"].to(device)
+            # run the tensors through transformer
+
+
+
+
 def get_all_sentences(ds, lang):
     for item in ds:
         yield item["translation"][lang]
@@ -144,24 +183,32 @@ def train_model(config):
         label_smoothing=0.1,
     ).to(device)
 
-    for epoch in range(init_epoch, config['num_epochs']):
+    for epoch in range(init_epoch, config["num_epochs"]):
         model.train()
         batch_iterator = tqdm(train_dataloader, desc=f"Processing epoch {epoch:02d}")
         for batch in batch_iterator:
-            encoder_input = batch["encoder_input"].to(device) # (batch_size, seq_len)
-            decoder_input = batch["decoder_input"].to(device) # (batch_size, seq_len)
-            encoder_mask = batch['encoder_mask'].to(device) # (batch_size, seq_len)
-            decoder_mask = batch['decoder_mask'].to(device) # (batch_size, seq_len)
-            
-            # run the tensors through transformer
-            encoder_output = model.encode(encoder_input, encoder_mask) # (batch_size, seq_len, d_model)    
-            decoder_output = model.decode(encoder_output, encoder_mask, decoder_input, decoder_mask) # (batch_size, seq_len, d_model)
-            proj_output = model.projection(decoder_output) # (batch_size, seq_len, tgt_vocab_size)
+            encoder_input = batch["encoder_input"].to(device)  # (batch_size, seq_len)
+            decoder_input = batch["decoder_input"].to(device)  # (batch_size, seq_len)
+            encoder_mask = batch["encoder_mask"].to(device)  # (batch_size, seq_len)
+            decoder_mask = batch["decoder_mask"].to(device)  # (batch_size, seq_len)
 
-            label = batch["label"].to(device) # (batch_size, seq_len)
+            # run the tensors through transformer
+            encoder_output = model.encode(
+                encoder_input, encoder_mask
+            )  # (batch_size, seq_len, d_model)
+            decoder_output = model.decode(
+                encoder_output, encoder_mask, decoder_input, decoder_mask
+            )  # (batch_size, seq_len, d_model)
+            proj_output = model.projection(
+                decoder_output
+            )  # (batch_size, seq_len, tgt_vocab_size)
+
+            label = batch["label"].to(device)  # (batch_size, seq_len)
 
             # (batch_size, seq_len, tgt_vocab_size) -> (batch_size * seq_len, tgt_vocab_size)
-            loss = loss_fn(proj_output.view(-1, tokenizer_tgt.get), label.view(-1)) # (batch_size * seq_len, vocab_size)
+            loss = loss_fn(
+                proj_output.view(-1, tokenizer_tgt.get), label.view(-1)
+            )  # (batch_size * seq_len, vocab_size)
             batch_iterator.set_postfix({f"loss": f"{loss.item():6.3f}"})
 
             # log the loss
@@ -173,9 +220,9 @@ def train_model(config):
             optimizer.zero_grad()
 
             global_step += 1
-        
+
         # save the model at the end of the epoch
-        model_filename = get_weights_file_path(config, f'{epoch:02d}')
+        model_filename = get_weights_file_path(config, f"{epoch:02d}")
         torch.save(
             {
                 "epoch": epoch,
@@ -185,13 +232,12 @@ def train_model(config):
             },
             model_filename,
         )
-            
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     warnings.filterwarnings("ignore")
     config = get_config()
     train_model(config)
 
-            # (batch_size, seq_len)
-            # (batch_size * seq_len, vocab_size)
-
+    # (batch_size, seq_len)
+    # (batch_size * seq_len, vocab_size)
